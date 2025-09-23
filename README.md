@@ -1,0 +1,2 @@
+# Tome_main_1
+这是关于token merging的改进，运用了SATD的similarity计算方法，旨在训练H矩阵的矩阵元对于ViT模型的影响
