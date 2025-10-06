@@ -1,0 +1,148 @@
+# SATD Configuration File
+# SATD (Self-Attention Token Detection) 配置文件
+
+model:
+  # 基础模型配置
+  embed_dim: 768                    # 嵌入维度
+  max_tokens: 196                   # 最大token数量 (14x14 patches for 224x224 image)
+  num_heads: 12                     # 注意力头数
+  num_layers: 12                    # Transformer层数
+
+satd:
+  # SATD核心参数
+  similarity_threshold: 0.8         # 相似性阈值，控制合并激进程度
+  temperature: 0.5                  # 温度参数，控制距离敏感度
+  alpha: 0.7                        # 余弦相似度权重 (0-1)
+  
+  # H矩阵参数
+  h_matrix:
+    symmetric: true                 # H矩阵是否对称
+    init_std: 0.1                   # 初始化标准差
+    
+  # 合并策略
+  merge_strategy:
+    method: "hierarchical"          # 合并方法: hierarchical/greedy/clustering
+    max_merge_ratio: 0.5           # 最大合并比例
+    preserve_cls_token: true        # 是否保留CLS token
+
+training:
+  # 训练参数
+  batch_size: 32                    # 批大小
+  learning_rate: 1e-4              # 主模型学习率
+  h_matrix_lr: 1e-5                # H矩阵学习率 (主模型学习率的1/10)
+  weight_decay: 1e-4               # 权重衰减
+  warmup_steps: 1000               # 预热步数
+  max_epochs: 100                  # 最大训练轮数
+  
+  # 损失函数权重
+  loss_weights:
+    task_loss: 1.0                 # 主任务损失权重
+    similarity_loss: 1.0           # 相似性损失权重
+    diversity_loss: 0.1            # 多样性损失权重
+    structure_loss: 0.1            # 结构损失权重
+    h_reg_loss: 0.01              # H矩阵正则化权重
+  
+  # 学习率调度
+  scheduler:
+    type: "cosine"                 # 调度器类型: cosine/linear/step
+    min_lr: 1e-6                   # 最小学习率
+    
+  # 自适应参数调整
+  adaptive:
+    enable: true                   # 是否启用自适应调整
+    threshold_schedule:
+      start: 0.9                   # 起始阈值
+      end: 0.7                     # 结束阈值
+      schedule: "linear"           # 调度方式: linear/exponential
+    
+validation:
+  # 验证参数
+  val_interval: 5                  # 验证间隔(epochs)
+  early_stopping:
+    patience: 10                   # 早停耐心值
+    min_delta: 0.001              # 最小改善量
+    
+data:
+  # 数据参数
+  image_size: 224                  # 输入图像大小
+  patch_size: 16                   # patch大小
+  num_classes: 1000               # 类别数 (ImageNet)
+  
+  # 数据增强
+  augmentation:
+    enable: true
+    methods: ["random_crop", "horizontal_flip", "color_jitter"]
+    
+  # 数据集路径
+  train_path: "/path/to/train"
+  val_path: "/path/to/val"
+  test_path: "/path/to/test"
+
+optimization:
+  # 优化参数
+  mixed_precision: true            # 混合精度训练
+  gradient_clip: 1.0              # 梯度裁剪
+  
+  # 内存优化
+  checkpoint_activations: true     # 激活检查点
+  pin_memory: true                # 固定内存
+  
+logging:
+  # 日志参数
+  log_dir: "./logs"               # 日志目录
+  log_interval: 100               # 日志间隔(steps)
+  save_interval: 1000             # 模型保存间隔(steps)
+  
+  # 监控指标
+  metrics:
+    - "accuracy"
+    - "token_reduction_ratio"
+    - "similarity_loss"
+    - "diversity_loss"
+    - "structure_loss"
+    - "inference_time"
+    
+  # 可视化
+  visualization:
+    enable: true
+    plot_similarity_matrix: true
+    plot_h_matrix: true
+    plot_training_curves: true
+
+deployment:
+  # 部署参数
+  export_format: "torchscript"    # 导出格式: torchscript/onnx
+  quantization:
+    enable: false                 # 是否量化
+    method: "dynamic"             # 量化方法: dynamic/static
+  
+  # 推理优化
+  inference:
+    batch_size: 1                 # 推理批大小
+    use_cache: true              # 使用缓存
+    parallel: false              # 并行推理
+
+# 实验配置
+experiments:
+  # 不同配置的实验
+  configs:
+    conservative:
+      similarity_threshold: 0.9
+      temperature: 0.3
+      alpha: 0.8
+      
+    balanced:
+      similarity_threshold: 0.8
+      temperature: 0.5
+      alpha: 0.7
+      
+    aggressive:
+      similarity_threshold: 0.6
+      temperature: 0.8
+      alpha: 0.5
+
+# 设备配置
+device:
+  type: "auto"                    # auto/cpu/cuda
+  gpu_ids: [0]                    # GPU设备ID
+  num_workers: 4                  # 数据加载进程数
